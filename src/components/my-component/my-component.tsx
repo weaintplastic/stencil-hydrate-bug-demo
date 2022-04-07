@@ -8,13 +8,9 @@ import { Component, h } from '@stencil/core';
 export class MyComponent {
   render() {
     return (
-      <div>
-        <label>
-          <b>
-            <slot />
-          </b>
-        </label>
-      </div>
+      <label>
+        <slot />
+      </label>
     );
   }
 }

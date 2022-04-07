@@ -3,7 +3,7 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /*!
- Stencil Mock Doc v2.10.0 | MIT Licensed | https://stenciljs.com
+ Stencil Mock Doc v2.15.0 | MIT Licensed | https://stenciljs.com
  */
 const CONTENT_REF_ID = 'r';
 const ORG_LOCATION_ID = 'o';
@@ -223,7 +223,7 @@ class MockCustomElementRegistry {
   whenDefined(tagName) {
     tagName = tagName.toLowerCase();
     if (this.__registry != null && this.__registry.has(tagName) === true) {
-      return Promise.resolve();
+      return Promise.resolve(this.__registry.get(tagName).cstr);
     }
     return new Promise((resolve) => {
       if (this.__whenDefined == null) {
@@ -548,7 +548,7 @@ class MockCSSStyleDeclaration {
         const splt = rule.split(':');
         if (splt.length > 1) {
           const prop = splt[0].trim();
-          const value = splt[1].trim();
+          const value = splt.slice(1).join(':').trim();
           if (prop !== '' && value !== '') {
             this._styles.set(jsCaseToCssCase(prop), value);
           }
@@ -629,6 +629,21 @@ class MockEvent {
   }
   stopImmediatePropagation() {
     this.cancelBubble = true;
+  }
+  composedPath() {
+    const composedPath = [];
+    let currentElement = this.target;
+    while (currentElement) {
+      composedPath.push(currentElement);
+      if (!currentElement.parentElement && currentElement.nodeName === "#document" /* DOCUMENT_NODE */) {
+        // the current element doesn't have a parent, but we've detected it's our root document node. push the window
+        // object associated with the document onto the path
+        composedPath.push(currentElement.defaultView);
+        break;
+      }
+      currentElement = currentElement.parentElement;
+    }
+    return composedPath;
   }
 }
 class MockCustomEvent extends MockEvent {
@@ -1511,6 +1526,9 @@ class MockNode {
     return null;
   }
   contains(otherNode) {
+    if (otherNode === this) {
+      return true;
+    }
     return this.childNodes.includes(otherNode);
   }
   removeChild(childNode) {
@@ -3453,9 +3471,19 @@ class MockPerformance {
   getEntriesByType() {
     return [];
   }
+  // Stencil's implementation of `mark` is non-compliant with the `Performance` interface. Because Stencil will
+  // instantiate an instance of this class and may attempt to assign it to a variable of type `Performance`, the return
+  // type must match the `Performance` interface (rather than typing this function as returning `void` and ignoring the
+  // associated errors returned by the type checker)
+  // @ts-ignore
   mark() {
     //
   }
+  // Stencil's implementation of `measure` is non-compliant with the `Performance` interface. Because Stencil will
+  // instantiate an instance of this class and may attempt to assign it to a variable of type `Performance`, the return
+  // type must match the `Performance` interface (rather than typing this function as returning `void` and ignoring the
+  // associated errors returned by the type checker)
+  // @ts-ignore
   measure() {
     //
   }
@@ -4205,6 +4233,8 @@ function cloneWindow(srcWin, opts = {}) {
   }
   const clonedWin = new MockWindow(false);
   if (!opts.customElementProxy) {
+    // TODO(STENCIL-345) - Evaluate reconciling MockWindow, Window differences
+    // @ts-ignore
     srcWin.customElements = null;
   }
   if (srcWin.document != null) {
@@ -5146,7 +5176,9 @@ const callRender = (e, t, o) => {
  }
 }, parsePropertyValue = (e, t) => null == e || isComplexType(e) ? e : e, getValue = (e, t) => getHostRef(e).$instanceValues$.get(t), setValue = (e, t, o, n) => {
  const s = getHostRef(e), a = s.$instanceValues$.get(t), r = s.$flags$, i = s.$lazyInstance$ ;
- if (o = parsePropertyValue(o), !(8 & r && void 0 !== a || o === a) && (s.$instanceValues$.set(t, o), 
+ o = parsePropertyValue(o);
+ const d = Number.isNaN(a) && Number.isNaN(o), c = o !== a && !d;
+ if ((!(8 & r) || void 0 === a) && c && (s.$instanceValues$.set(t, o), 
  i)) {
   if (2 == (18 & r)) {
    scheduleUpdate(s, !1);
@@ -5349,14 +5381,14 @@ const cmpModules = new Map, getModule = e => {
  e["s-p"] = [], e["s-rc"] = [], hostRefs.set(e, o);
 }, styles = new Map;
 
-const myComponentCss = "/*!@:host*/.sc-my-component-h{display:block}/*!@label*/label.sc-my-component{border:1px solid red}";
+const myComponentCss = "/*!@:host*/.sc-my-component-h{display:block}";
 
 class MyComponent {
   constructor(hostRef) {
     registerInstance(this, hostRef);
   }
   render() {
-    return (hAsync("div", null, hAsync("label", null, hAsync("b", null, hAsync("slot", null)))));
+    return (hAsync("label", null, hAsync("slot", null)));
   }
   static get style() { return myComponentCss; }
   static get cmpMeta() { return {
@@ -5690,7 +5722,7 @@ function finalizeHydrate(e, t, r, s, n) {
        absFilePath: null,
        lines: []
       };
-      null != t && (null != t.stack ? s.messageText = t.stack.toString() : null != t.message ? s.messageText = t.message.toString() : s.messageText = t.toString()), 
+      null != t && (null != t.stack ? s.messageText = t.stack.toString() : null != t.message ? s.messageText = t.message.length ? t.message : "UNKNOWN ERROR" : s.messageText = t.toString()), 
       null == e || shouldIgnoreError(s.messageText) || e.push(s);
      })(t, e);
     }
