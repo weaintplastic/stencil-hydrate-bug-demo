@@ -1,0 +1,6 @@
+{
+  "name": "hydrate-bug/hydrate",
+  "description": "HydrateBug component hydration app.",
+  "main": "index.js",
+  "types": "index.d.ts"
+}
