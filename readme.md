@@ -33,11 +33,11 @@ Both, `./www/app.html` and `./www/index.html` contain a pre-rendered version of 
 <my-component class="sc-my-component-h hydrated" s-id="1">
   <!--r.1-->
   <!--o.0.1.-->
-  <label class="sc-my-component sc-my-component-s" c-id="1.0.0.0">
+  <button class="sc-my-component sc-my-component-s" c-id="1.0.0.0">
     <!--s.1.1.1.0.-->
     <!--t.0.1-->
     This is the label
-  </label>
+  </button>
 </my-component>
 ```
 
@@ -46,11 +46,11 @@ After client-side hydration with Stencil's `dist` bundle, the html looks correct
 ```html
 <my-component class="hydrated">
   <!-- #shadow-root (open) -->
-  <label class="sc-my-component sc-my-component-s">
+  <button class="sc-my-component sc-my-component-s">
     <slot>
       <!-- ↳ #text reveal -->
     </slot>
-  </label>
+  </button>
   <!---->
   This is the label
 </my-component>
@@ -61,17 +61,17 @@ After client-side hydration with the custom `app` bundle, the html looks very di
 ```html
 <my-component class="sc-my-component-h hydrated" s-id="1">
   <!-- #shadow-root (open) -->
-  <label>
+  <button>
     <slot>
-      <!-- ↳ <label> reveal -->
+      <!-- ↳ <button> reveal -->
     </slot>
-  </label>
+  </button>
   <!--r.1-->
   <!--o.0.1.-->
-  <label class="sc-my-component sc-my-component-s" c-id="1.0.0.0">
+  <button class="sc-my-component sc-my-component-s" c-id="1.0.0.0">
     <!--s.1.1.1.0.-->
     <!--t.0.1-->
     This is the label
-  </label>
+  </button>
 </my-component>
 ```

@@ -8,9 +8,9 @@ import { Component, h } from '@stencil/core';
 export class MyComponent {
   render() {
     return (
-      <label>
+      <button>
         <slot />
-      </label>
+      </button>
     );
   }
 }
