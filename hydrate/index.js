@@ -3,7 +3,7 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /*!
- Stencil Mock Doc v2.15.0 | MIT Licensed | https://stenciljs.com
+ Stencil Mock Doc v2.17.0 | MIT Licensed | https://stenciljs.com
  */
 const CONTENT_REF_ID = 'r';
 const ORG_LOCATION_ID = 'o';
@@ -382,7 +382,7 @@ function toDataAttribute(str) {
       .toLowerCase());
 }
 function dashToPascalCase(str) {
-  str = String(str).substr(5);
+  str = String(str).slice(5);
   return str
     .split('-')
     .map((segment, index) => {
@@ -586,7 +586,7 @@ function cssCaseToJsCase(str) {
       .split('-')
       .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
       .join('');
-    str = str.substr(0, 1).toLowerCase() + str.substr(1);
+    str = str.slice(0, 1).toLowerCase() + str.slice(1);
   }
   return str;
 }
@@ -1529,7 +1529,11 @@ class MockNode {
     if (otherNode === this) {
       return true;
     }
-    return this.childNodes.includes(otherNode);
+    const childNodes = Array.from(this.childNodes);
+    if (childNodes.includes(otherNode)) {
+      return true;
+    }
+    return childNodes.some((node) => this.contains.bind(node)(otherNode));
   }
   removeChild(childNode) {
     const index = this.childNodes.indexOf(childNode);
@@ -1597,6 +1601,9 @@ class MockElement extends MockNode {
     const shadowRoot = this.ownerDocument.createDocumentFragment();
     this.shadowRoot = shadowRoot;
     return shadowRoot;
+  }
+  blur() {
+    /**/
   }
   get shadowRoot() {
     return this.__shadowRoot || null;
@@ -1666,6 +1673,7 @@ class MockElement extends MockNode {
   get firstElementChild() {
     return this.children[0] || null;
   }
+  focus(_options) { }
   getAttribute(attrName) {
     if (attrName === 'style') {
       if (this.__style != null && this.__style.length > 0) {
@@ -2569,7 +2577,28 @@ function createElementNS(ownerDocument, namespaceURI, tagName) {
     return createElement(ownerDocument, tagName);
   }
   else if (namespaceURI === 'http://www.w3.org/2000/svg') {
-    return new MockSVGElement(ownerDocument, tagName);
+    switch (tagName.toLowerCase()) {
+      case 'text':
+      case 'tspan':
+      case 'tref':
+      case 'altglyph':
+      case 'textpath':
+        return new MockSVGTextContentElement(ownerDocument, tagName);
+      case 'circle':
+      case 'ellipse':
+      case 'image':
+      case 'line':
+      case 'path':
+      case 'polygon':
+      case 'polyline':
+      case 'rect':
+      case 'use':
+        return new MockSVGGraphicsElement(ownerDocument, tagName);
+      case 'svg':
+        return new MockSVGSVGElement(ownerDocument, tagName);
+      default:
+        return new MockSVGElement(ownerDocument, tagName);
+    }
   }
   else {
     return new MockElement(ownerDocument, tagName);
@@ -2716,6 +2745,98 @@ class MockScriptElement extends MockHTMLElement {
 patchPropAttributes(MockScriptElement.prototype, {
   type: String,
 });
+class MockDOMMatrix {
+  constructor() {
+    this.a = 1;
+    this.b = 0;
+    this.c = 0;
+    this.d = 1;
+    this.e = 0;
+    this.f = 0;
+    this.m11 = 1;
+    this.m12 = 0;
+    this.m13 = 0;
+    this.m14 = 0;
+    this.m21 = 0;
+    this.m22 = 1;
+    this.m23 = 0;
+    this.m24 = 0;
+    this.m31 = 0;
+    this.m32 = 0;
+    this.m33 = 1;
+    this.m34 = 0;
+    this.m41 = 0;
+    this.m42 = 0;
+    this.m43 = 0;
+    this.m44 = 1;
+    this.is2D = true;
+    this.isIdentity = true;
+  }
+  static fromMatrix() {
+    return new MockDOMMatrix();
+  }
+  inverse() {
+    return new MockDOMMatrix();
+  }
+  flipX() {
+    return new MockDOMMatrix();
+  }
+  flipY() {
+    return new MockDOMMatrix();
+  }
+  multiply() {
+    return new MockDOMMatrix();
+  }
+  rotate() {
+    return new MockDOMMatrix();
+  }
+  rotateAxisAngle() {
+    return new MockDOMMatrix();
+  }
+  rotateFromVector() {
+    return new MockDOMMatrix();
+  }
+  scale() {
+    return new MockDOMMatrix();
+  }
+  scaleNonUniform() {
+    return new MockDOMMatrix();
+  }
+  skewX() {
+    return new MockDOMMatrix();
+  }
+  skewY() {
+    return new MockDOMMatrix();
+  }
+  toJSON() { }
+  toString() { }
+  transformPoint() {
+    return new MockDOMPoint();
+  }
+  translate() {
+    return new MockDOMMatrix();
+  }
+}
+class MockDOMPoint {
+  constructor() {
+    this.w = 1;
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+  }
+  toJSON() { }
+  matrixTransform() {
+    return new MockDOMMatrix();
+  }
+}
+class MockSVGRect {
+  constructor() {
+    this.height = 10;
+    this.width = 10;
+    this.x = 0;
+    this.y = 0;
+  }
+}
 class MockStyleElement extends MockHTMLElement {
   constructor(ownerDocument) {
     super(ownerDocument, 'style');
@@ -2748,9 +2869,6 @@ class MockSVGElement extends MockElement {
   get viewportElement() {
     return null;
   }
-  focus() {
-    /**/
-  }
   onunload() {
     /**/
   }
@@ -2765,6 +2883,27 @@ class MockSVGElement extends MockElement {
     return false;
   }
   getTotalLength() {
+    return 0;
+  }
+}
+class MockSVGGraphicsElement extends MockSVGElement {
+  getBBox(_options) {
+    return new MockSVGRect();
+  }
+  getCTM() {
+    return new MockDOMMatrix();
+  }
+  getScreenCTM() {
+    return new MockDOMMatrix();
+  }
+}
+class MockSVGSVGElement extends MockSVGGraphicsElement {
+  createSVGPoint() {
+    return new MockDOMPoint();
+  }
+}
+class MockSVGTextContentElement extends MockSVGGraphicsElement {
+  getComputedTextLength() {
     return 0;
   }
 }
@@ -3166,6 +3305,15 @@ class MockResponse {
   }
 }
 
+class MockDOMParser {
+  parseFromString(htmlToParse, mimeType) {
+    if (mimeType !== 'text/html') {
+      console.error('XML parsing not implemented yet, continuing as html');
+    }
+    return parseHtmlToDocument(htmlToParse);
+  }
+}
+
 function setupGlobal(gbl) {
   if (gbl.window == null) {
     const win = (gbl.window = new MockWindow());
@@ -3295,6 +3443,7 @@ const GLOBAL_CONSTRUCTORS = [
   ['MouseEvent', MockMouseEvent],
   ['Request', MockRequest],
   ['Response', MockResponse],
+  ['DOMParser', MockDOMParser],
   ['HTMLAnchorElement', MockAnchorElement],
   ['HTMLBaseElement', MockBaseElement],
   ['HTMLButtonElement', MockButtonElement],
@@ -4254,9 +4403,11 @@ function cloneDocument(srcDoc) {
   const dstWin = cloneWindow(srcDoc.defaultView);
   return dstWin.document;
 }
+// TODO(STENCIL-345) - Evaluate reconciling MockWindow, Window differences
 /**
  * Constrain setTimeout() to 1ms, but still async. Also
  * only allow setInterval() to fire once, also constrained to 1ms.
+ * @param win the mock window instance to update
  */
 function constrainTimeouts(win) {
   win.__allowInterval = false;
@@ -4791,9 +4942,9 @@ function hydrateApp(e, t, o, n, s) {
          enumerable: !0
         });
        } else 64 & l && Object.defineProperty(e, n, {
-        value() {
-         const e = getHostRef(this), t = arguments;
-         return e.$onInstancePromise$.then((() => e.$lazyInstance$[n].apply(e.$lazyInstance$, t))).catch(consoleError);
+        value(...e) {
+         const t = getHostRef(this);
+         return t.$onInstancePromise$.then((() => t.$lazyInstance$[n](...e))).catch(consoleError);
         }
        });
       }));
@@ -4916,7 +5067,8 @@ const createTime = (e, t = "") => {
  let n = styles.get(e);
  n = t, styles.set(e, n);
 }, addStyle = (e, t, o, n) => {
- let s = getScopeId(t), l = styles.get(s);
+ let s = getScopeId(t);
+ const l = styles.get(s);
  if (e = 11 === e.nodeType ? e : doc, l) if ("string" == typeof l) {
   e = e.head || e;
   let o, a = rootAppliedStyles.get(e);
@@ -4936,8 +5088,8 @@ const createTime = (e, t = "") => {
  o.classList.add(l + "-h"), BUILD.scoped  ), 
  s();
 }, getScopeId = (e, t) => "sc-" + (e.$tagName$), isComplexType = e => "object" == (e = typeof e) || "function" === e, isPromise = e => !!e && ("object" == typeof e || "function" == typeof e) && "function" == typeof e.then, h = (e, t, ...o) => {
- let n = null, l = null, a = !1, r = !1, i = [];
- const d = t => {
+ let n = null, l = null, a = !1, r = !1;
+ const i = [], d = t => {
   for (let o = 0; o < t.length; o++) n = t[o], Array.isArray(n) ? d(n) : null != n && "boolean" != typeof n && ((a = "function" != typeof e && !isComplexType(n)) ? n = String(n) : BUILD.isDev  , 
   a && r ? i[i.length - 1].$text$ += n : i.push(a ? newVNode(null, n) : n), r = a);
  };
@@ -4961,18 +5113,19 @@ const createTime = (e, t = "") => {
 let scopeId, contentRef, hostTagName, useNativeShadowDom = !1, checkSlotFallbackVisibility = !1, checkSlotRelocate = !1;
 
 const createElm = (e, t, o, n) => {
- let s, l, a, r = t.$children$[o], i = 0;
- if (!useNativeShadowDom && (checkSlotRelocate = !0, "slot" === r.$tag$ && (scopeId && n.classList.add(scopeId + "-s"), 
- r.$flags$ |= r.$children$ ? 2 : 1)), BUILD.vdomText ) ; else if (1 & r.$flags$) s = r.$elm$ = slotReferenceDebugNode(r) ; else {
-  if (s = r.$elm$ = doc.createElement(2 & r.$flags$ ? "slot-fb" : r.$tag$), 
-  null != scopeId && s["s-si"] !== scopeId && s.classList.add(s["s-si"] = scopeId), 
-  r.$children$) for (i = 0; i < r.$children$.length; ++i) l = createElm(e, r, i, s), 
-  l && s.appendChild(l);
+ const s = t.$children$[o];
+ let l, a, r, i = 0;
+ if (!useNativeShadowDom && (checkSlotRelocate = !0, "slot" === s.$tag$ && (scopeId && n.classList.add(scopeId + "-s"), 
+ s.$flags$ |= s.$children$ ? 2 : 1)), BUILD.vdomText ) ; else if (1 & s.$flags$) l = s.$elm$ = slotReferenceDebugNode(s) ; else {
+  if (l = s.$elm$ = doc.createElement(2 & s.$flags$ ? "slot-fb" : s.$tag$), 
+  null != scopeId && l["s-si"] !== scopeId && l.classList.add(l["s-si"] = scopeId), 
+  s.$children$) for (i = 0; i < s.$children$.length; ++i) a = createElm(e, s, i, l), 
+  a && l.appendChild(a);
  }
- return (s["s-hn"] = hostTagName, 3 & r.$flags$ && (s["s-sr"] = !0, 
- s["s-cr"] = contentRef, s["s-sn"] = r.$name$ || "", a = e && e.$children$ && e.$children$[o], 
- a && a.$tag$ === r.$tag$ && e.$elm$ && putBackInOriginalLocation(e.$elm$, !1))), 
- s;
+ return (l["s-hn"] = hostTagName, 3 & s.$flags$ && (l["s-sr"] = !0, 
+ l["s-cr"] = contentRef, l["s-sn"] = s.$name$ || "", r = e && e.$children$ && e.$children$[o], 
+ r && r.$tag$ === s.$tag$ && e.$elm$ && putBackInOriginalLocation(e.$elm$, !1))), 
+ l;
 }, putBackInOriginalLocation = (e, t) => {
  plt.$flags$ |= 1;
  const o = e.childNodes;
@@ -5004,22 +5157,24 @@ const createElm = (e, t, o, n) => {
  })(o, n, t, s) : null !== s ? (addVnodes(o, null, t, s, 0, s.length - 1)) : null !== n && removeVnodes(n, 0, n.length - 1), 
  BUILD.svg   );
 }, updateFallbackSlotVisibility = e => {
- let t, o, n, s, l, a, r = e.childNodes;
- for (o = 0, n = r.length; o < n; o++) if (t = r[o], 1 === t.nodeType) {
-  if (t["s-sr"]) for (l = t["s-sn"], t.hidden = !1, s = 0; s < n; s++) if (a = r[s].nodeType, 
-  r[s]["s-hn"] !== t["s-hn"] || "" !== l) {
-   if (1 === a && l === r[s].getAttribute("slot")) {
-    t.hidden = !0;
+ const t = e.childNodes;
+ let o, n, s, l, a, r;
+ for (n = 0, s = t.length; n < s; n++) if (o = t[n], 1 === o.nodeType) {
+  if (o["s-sr"]) for (a = o["s-sn"], o.hidden = !1, l = 0; l < s; l++) if (r = t[l].nodeType, 
+  t[l]["s-hn"] !== o["s-hn"] || "" !== a) {
+   if (1 === r && a === t[l].getAttribute("slot")) {
+    o.hidden = !0;
     break;
    }
-  } else if (1 === a || 3 === a && "" !== r[s].textContent.trim()) {
-   t.hidden = !0;
+  } else if (1 === r || 3 === r && "" !== t[l].textContent.trim()) {
+   o.hidden = !0;
    break;
   }
-  updateFallbackSlotVisibility(t);
+  updateFallbackSlotVisibility(o);
  }
 }, relocateNodes = [], relocateSlotContent = e => {
- let t, o, n, s, l, a, r = 0, i = e.childNodes, d = i.length;
+ let t, o, n, s, l, a, r = 0;
+ const i = e.childNodes, d = i.length;
  for (;r < d; r++) {
   if (t = i[r], t["s-sr"] && (o = t["s-cr"]) && o.parentNode) for (n = o.parentNode.childNodes, 
   s = t["s-sn"], a = n.length - 1; a >= 0; a--) o = n[a], o["s-cn"] || o["s-nr"] || o["s-hn"] === t["s-hn"] || (isNodeLocatedInSlot(o, s) ? (l = relocateNodes.find((e => e.$nodeToRelocate$ === o)), 
@@ -5388,7 +5543,7 @@ class MyComponent {
     registerInstance(this, hostRef);
   }
   render() {
-    return (hAsync("label", null, hAsync("slot", null)));
+    return (hAsync("button", null, hAsync("slot", null)));
   }
   static get style() { return myComponentCss; }
   static get cmpMeta() { return {
@@ -6068,7 +6223,7 @@ const templateWindows = new Map, createHydrateBuildId = () => {
 }, commentre = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//g, getCssSelectors = e => {
  SELECTORS.all.length = SELECTORS.tags.length = SELECTORS.classNames.length = SELECTORS.ids.length = SELECTORS.attrs.length = 0;
  const t = (e = e.replace(/\./g, " .").replace(/\#/g, " #").replace(/\[/g, " [").replace(/\>/g, " > ").replace(/\+/g, " + ").replace(/\~/g, " ~ ").replace(/\*/g, " * ").replace(/\:not\((.*?)\)/g, " ")).split(" ");
- for (let e = 0, r = t.length; e < r; e++) t[e] = t[e].split(":")[0], 0 !== t[e].length && ("." === t[e].charAt(0) ? SELECTORS.classNames.push(t[e].substr(1)) : "#" === t[e].charAt(0) ? SELECTORS.ids.push(t[e].substr(1)) : "[" === t[e].charAt(0) ? (t[e] = t[e].substr(1).split("=")[0].split("]")[0].trim(), 
+ for (let e = 0, r = t.length; e < r; e++) t[e] = t[e].split(":")[0], 0 !== t[e].length && ("." === t[e].charAt(0) ? SELECTORS.classNames.push(t[e].slice(1)) : "#" === t[e].charAt(0) ? SELECTORS.ids.push(t[e].slice(1)) : "[" === t[e].charAt(0) ? (t[e] = t[e].slice(1).split("=")[0].split("]")[0].trim(), 
  SELECTORS.attrs.push(t[e].toLowerCase())) : /[a-z]/g.test(t[e].charAt(0)) && SELECTORS.tags.push(t[e].toLowerCase()));
  return SELECTORS.classNames = SELECTORS.classNames.sort(((e, t) => e.length < t.length ? -1 : e.length > t.length ? 1 : 0)), 
  SELECTORS;

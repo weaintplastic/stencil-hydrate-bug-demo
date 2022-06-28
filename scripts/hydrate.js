@@ -1,5 +1,4 @@
 const { renderToString, hydrateDocument } = require('../hydrate');
-const domino = require('domino');
 const fs = require('fs');
 
 const htmlFiles = ['./www/index.html', './www/app.html'];
