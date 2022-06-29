@@ -1,3 +1,3 @@
-import { MyComponent } from '../dist/components/my-component';
+import { MyComponent, defineCustomElement } from '../dist/components/my-component';
 
-customElements.define('my-component', MyComponent);
+defineCustomElement();
